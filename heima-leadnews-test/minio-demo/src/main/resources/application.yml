@@ -1,0 +1,6 @@
+minio:
+  accessKey: admin
+  secretKey: admin123456
+  bucket: leadnews
+  endpoint: http://121.4.65.89:9000
+  readPath: http://121.4.65.89:9000
