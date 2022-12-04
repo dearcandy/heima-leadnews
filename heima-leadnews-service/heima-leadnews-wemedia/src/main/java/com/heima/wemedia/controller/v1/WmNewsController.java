@@ -1,6 +1,7 @@
 package com.heima.wemedia.controller.v1;
 
 import com.heima.model.common.dtos.ResponseResult;
+import com.heima.model.wemedia.dtos.WmNewsDto;
 import com.heima.model.wemedia.dtos.WmNewsPageReqDto;
 import com.heima.wemedia.service.WmNewsService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,16 @@ public class WmNewsController {
     @PostMapping("/list")
     public ResponseResult findAll(@RequestBody WmNewsPageReqDto dto){
         return  wmNewsService.findAll(dto);
+    }
+
+    /**
+     * 发布修改文章或保存为草稿
+     * @param dto 新增或修改参数
+     * @return 操作结果
+     */
+    @PostMapping("/submit")
+    public ResponseResult submitNews(@RequestBody WmNewsDto dto){
+        return wmNewsService.submitNews(dto);
     }
 
 }
