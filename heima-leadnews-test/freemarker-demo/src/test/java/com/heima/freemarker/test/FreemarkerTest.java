@@ -1,8 +1,8 @@
 package com.heima.freemarker.test;
 
 
-import com.heima.freemarker.FreemarkerDemoApplication;
 import com.heima.freemarker.entity.Student;
+import com.heima.freemarker.FreemarkerDemoApplication;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
