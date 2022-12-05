@@ -21,6 +21,7 @@ import com.heima.wemedia.mapper.WmMaterialMapper;
 import com.heima.wemedia.mapper.WmNewsMapper;
 import com.heima.wemedia.mapper.WmNewsMaterialMapper;
 import com.heima.model.wemedia.dtos.WmNewsDto;
+import com.heima.wemedia.service.WmNewsAutoScanService;
 import com.heima.wemedia.service.WmNewsService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +40,8 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
     WmNewsMaterialMapper wmNewsMaterialMapper;
     @Resource
     WmMaterialMapper wmMaterialMapper;
+    @Resource
+    WmNewsAutoScanService wmNewsAutoScanService;
 
     @Override
     public ResponseResult findAll(WmNewsPageReqDto dto) {
@@ -98,6 +101,7 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
      */
     @Override
     public ResponseResult submitNews(WmNewsDto dto) {
+        log.info("发布文章或保存草稿, param : {}", dto);
         // 参数校验
         if(dto == null || dto.getContent() == null){
             return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
@@ -130,6 +134,11 @@ public class WmNewsServiceImpl extends ServiceImpl<WmNewsMapper, WmNews> impleme
 
         //4.不是草稿，保存文章封面图片与素材的关系，如果当前布局是自动，需要匹配封面图片
         saveRelativeInfoForCover(dto,wmNews,materials);
+
+        log.info("审核文章, param : {}", wmNews.getId());
+        // 审核文章
+        wmNewsAutoScanService.autoScanWmNews(wmNews.getId());
+
 
         return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
     }

@@ -14,6 +14,7 @@ import com.heima.model.article.pojos.ApArticleContent;
 import com.heima.model.common.dtos.ResponseResult;
 import com.heima.article.service.ApArticleService;
 import com.heima.model.common.enums.AppHttpCodeEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
-
+@Slf4j
 @Service
 public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle> implements ApArticleService {
 
@@ -78,6 +79,7 @@ public class ApArticleServiceImpl extends ServiceImpl<ApArticleMapper, ApArticle
      */
     @Override
     public ResponseResult saveArticle(ArticleDto dto) {
+        log.info("保存app端相关文章, param : {}", dto);
         // 检查参数
         if (dto == null){
             return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);

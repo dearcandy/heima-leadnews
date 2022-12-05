@@ -65,7 +65,7 @@ public class ApArticle implements Serializable {
     private Byte flag;
 
     /**
-     * 文章封面图片 多张逗号分隔
+     * 文章封面图片 多逗号分隔
      */
     private String images;
 
