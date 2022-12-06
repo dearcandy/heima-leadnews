@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.heima.apis.article.IArticleClient;
 import com.heima.common.tencent.cloud.util.TencentContentSecurity;
+import com.heima.common.tess4j.Tess4jClient;
 import com.heima.file.service.FileStorageService;
 import com.heima.model.article.dtos.ArticleDto;
 import com.heima.model.common.dtos.ResponseResult;
@@ -25,6 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -50,6 +54,8 @@ public class WmNewsAutoScanServiceImpl implements WmNewsAutoScanService {
     private WmUserMapper wmUserMapper;
     @Resource
     private WmSensitiveMapper wmSensitiveMapper;
+    @Resource
+    private Tess4jClient tess4jClient;
 
     /**
      * 自媒体文章审核
@@ -172,10 +178,28 @@ public class WmNewsAutoScanServiceImpl implements WmNewsAutoScanService {
         images = images.stream().distinct().collect(Collectors.toList());
         for (String url : images) {
             byte[] bytes = fileStorageService.downLoadFile(url);
-            // 图片字节数组加密
-            String fileContent = Base64.getEncoder().encodeToString(bytes);
-            Map<String, String> resultMap = tencentContentSecurity.imageModeration(fileContent);
-            mapList.add(resultMap);
+
+            try{
+                // 识别图片的文字
+                ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+                BufferedImage read = ImageIO.read(in);
+                String result = tess4jClient.doOCR(read);
+                // 图片识别文字审核
+                boolean b = handleSensitiveScan(result, wmNews);
+                if (!b){
+                    return false;
+                }
+
+                // 图片字节数组加密
+                String fileContent = Base64.getEncoder().encodeToString(bytes);
+                Map<String, String> resultMap = tencentContentSecurity.imageModeration(fileContent);
+                mapList.add(resultMap);
+            } catch (Exception exception){
+                exception.printStackTrace();
+            }
+
+
+
         }
 
         // 循环判断每张图片审核结果
