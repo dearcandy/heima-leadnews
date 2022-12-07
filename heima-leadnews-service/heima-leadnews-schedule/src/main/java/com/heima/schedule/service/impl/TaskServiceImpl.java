@@ -10,13 +10,16 @@ import com.heima.schedule.mapper.TaskInfoLogsMapper;
 import com.heima.schedule.mapper.TaskInfoMapper;
 import com.heima.schedule.service.TaskService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -71,6 +74,31 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /**
+     * 拉取任务
+     * @param type 任务类型
+     * @param priority 任务优先级
+     * @return 任务
+     */
+    @Override
+    public Task pull(int type, int priority) {
+        Task task = null;
+        try {
+            String key = type + "_" + priority;
+            // 从Redis中拉取数据
+            String taskJson = cacheService.lRightPop(ScheduleConstants.TOPIC + key);
+            if (StringUtils.isNotBlank(taskJson)){
+                task = JSON.parseObject(taskJson, Task.class);
+
+                // 修改数据库信息
+                updateDb(task.getTaskId(), ScheduleConstants.EXECUTED);
+            }
+        }catch (Exception exception){
+            log.error("pull task has occurred exception : ", exception);
+        }
+        return task;
+    }
+
+    /**
      * 移除缓存中任务
      * @param task 任务实体
      */
@@ -79,9 +107,8 @@ public class TaskServiceImpl implements TaskService {
         if (task.getExecuteTime() <= System.currentTimeMillis()){
             cacheService.lRemove(ScheduleConstants.TOPIC + key, 0, JSON.toJSONString(task));
         }else{
-
-        }cacheService.zRemove(ScheduleConstants.FUTURE + key,  JSON.toJSONString(task));
-
+            cacheService.zRemove(ScheduleConstants.FUTURE + key,  JSON.toJSONString(task));
+        }
     }
 
     /**
@@ -153,5 +180,32 @@ public class TaskServiceImpl implements TaskService {
         log.info("添加任务日志成功条数 : {}", insert1);
 
         return insert == 1 && insert1 == 1;
+    }
+
+    @Scheduled(cron = "0 */1 * * * ?")
+    public void refresh(){
+        // 获取分布式锁
+        String token = cacheService.tryLock("FUTURE_TASK_SYNC", 1000 * 30);
+
+        if (StringUtils.isNotBlank(token)){
+            log.info("未来数据定时刷新");
+
+            // 获取所有未来集合key
+            Set<String> futureKeys = cacheService.scan(ScheduleConstants.FUTURE + "*");
+            for (String futureKey: futureKeys) {
+                // 构造当前数据的topic_key
+                String topicKey = ScheduleConstants.TOPIC + futureKey.split(ScheduleConstants.FUTURE)[1];
+
+                // 按照key和分值查询符合条件的数据
+                Set<String> tasks = cacheService.zRangeByScore(futureKey, 0, System.currentTimeMillis());
+
+                // 同步数据
+                if (!tasks.isEmpty()) {
+                    cacheService.refreshWithPipeline(futureKey, topicKey, tasks);
+                    log.info("成功的将" + futureKey + "刷新到了" + topicKey);
+                }
+            }
+        }
+
     }
 }
