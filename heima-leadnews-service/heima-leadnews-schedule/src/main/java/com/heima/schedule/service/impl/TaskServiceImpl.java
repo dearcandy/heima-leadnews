@@ -1,6 +1,7 @@
 package com.heima.schedule.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.heima.common.constants.ScheduleConstants;
 import com.heima.common.redis.CacheService;
 import com.heima.model.schedule.dtos.Task;
@@ -16,9 +17,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 @Slf4j
@@ -207,5 +210,43 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
+    }
+
+    /**
+     * 数据库任务定时全量同步Redis 每五分钟
+     */
+    @PostConstruct
+    @Scheduled(cron = "0 */5 * * * ?")
+    public void reloadData(){
+        // 清理缓存任务数据 list zSet
+        clearCache();
+        // 查询符合条件的任务
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MINUTE, 5);
+
+        List<TaskInfo> taskInfos = taskInfoMapper.selectList(Wrappers.<TaskInfo>lambdaQuery().lt(TaskInfo::getExecuteTime, calendar.getTime()));
+        // 任务同步
+
+        if (taskInfos != null && taskInfos.size() > 0){
+            for (TaskInfo taskInfo : taskInfos){
+                Task task = new Task();
+                BeanUtils.copyProperties(taskInfo, task);
+                task.setExecuteTime(taskInfo.getExecuteTime().getTime());
+                addTaskToCache(task);
+            }
+        }
+
+        log.info("数据库任务定时全量同步Redis");
+    }
+
+    /**
+     * 清理缓存中任务
+     */
+    public void  clearCache(){
+        Set<String> topicKeys = cacheService.scan(ScheduleConstants.TOPIC + "*");
+        Set<String> futureKeys = cacheService.scan(ScheduleConstants.FUTURE + "*");
+
+        cacheService.delete(topicKeys);
+        cacheService.delete(futureKeys);
     }
 }
