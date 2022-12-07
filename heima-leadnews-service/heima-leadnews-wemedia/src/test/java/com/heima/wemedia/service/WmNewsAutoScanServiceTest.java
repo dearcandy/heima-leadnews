@@ -1,5 +1,8 @@
 package com.heima.wemedia.service;
 
+import com.heima.apis.article.IArticleClient;
+import com.heima.model.article.dtos.ArticleDto;
+import com.heima.model.common.dtos.ResponseResult;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,8 +19,12 @@ public class WmNewsAutoScanServiceTest {
     @Resource
     private WmNewsAutoScanService wmNewsAutoScanService;
 
+    @Resource
+    private IArticleClient articleClient;
     @Test
     public void autoScanWmNews() {
-        wmNewsAutoScanService.autoScanWmNews(6235);
+        ArticleDto articleDto = new ArticleDto();
+        ResponseResult responseResult = articleClient.saveArticle(articleDto);
+        System.out.println(responseResult.getCode());
     }
 }

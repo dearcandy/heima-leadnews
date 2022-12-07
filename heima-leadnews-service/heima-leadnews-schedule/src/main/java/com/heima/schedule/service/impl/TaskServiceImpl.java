@@ -147,13 +147,15 @@ public class TaskServiceImpl implements TaskService {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MINUTE, 5);
         long nextScheduleTime = calendar.getTimeInMillis();
-
+        log.info("任务执行时间 : {}, 预设时间 : {}", task.getExecuteTime(), calendar.getTimeInMillis());
         String key = task.getTaskType() + "_" + task.getPriority();
         // 任务执行时间小于等于当前时间 存入list
         if (task.getExecuteTime() <= System.currentTimeMillis()){
+            log.info("任务执行时间小于等于当前时间 存入list");
             cacheService.lLeftPush(ScheduleConstants.TOPIC + key, JSON.toJSONString(task));
         }else if (task.getExecuteTime() < nextScheduleTime){
             // 任务执行时间大于当前时间 小于预设时间(5分钟内) 存入zSet
+            log.info("任务执行时间大于当前时间 小于预设时间(5分钟内) 存入zSet");
             cacheService.zAdd(ScheduleConstants.FUTURE + key, JSON.toJSONString(task), task.getExecuteTime());
         }
 
