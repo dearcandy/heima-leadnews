@@ -33,4 +33,9 @@ public class TaskServiceImplTest {
 
         System.out.println(id);
     }
+
+    @Test
+    public void cancelTask(){
+        boolean b = taskService.cancelTask(1600392069962117122L);
+    }
 }

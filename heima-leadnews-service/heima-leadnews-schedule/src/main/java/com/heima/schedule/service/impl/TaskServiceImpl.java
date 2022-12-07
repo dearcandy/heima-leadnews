@@ -51,6 +51,64 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /**
+     * 取消任务
+     * @param taskId 任务ID
+     * @return 取消结果
+     */
+    @Override
+    public boolean cancelTask(long taskId) {
+        boolean flag = false;
+        // 删除任务 更新任务日志
+        Task task = updateDb(taskId, ScheduleConstants.CANCELLED);
+
+        // 删除缓存中任务信息
+        if (task.getTaskType() != null){
+            removeTaskFromCache(task);
+            flag = true;
+        }
+
+        return flag;
+    }
+
+    /**
+     * 移除缓存中任务
+     * @param task 任务实体
+     */
+    private void removeTaskFromCache(Task task) {
+        String key = task.getTaskType() + "_" + task.getPriority();
+        if (task.getExecuteTime() <= System.currentTimeMillis()){
+            cacheService.lRemove(ScheduleConstants.TOPIC + key, 0, JSON.toJSONString(task));
+        }else{
+
+        }cacheService.zRemove(ScheduleConstants.FUTURE + key,  JSON.toJSONString(task));
+
+    }
+
+    /**
+     * 删除任务 更新任务日志
+     * @param taskId 任务ID
+     * @param status 任务状态
+     * @return 任务信息
+     */
+    private Task updateDb(long taskId, int status) {
+        Task task = new Task();
+      try{
+          // 删除任务
+          taskInfoMapper.deleteById(taskId);
+          // 更新任务日志
+          TaskInfoLogs taskInfoLogs = taskInfoLogsMapper.selectById(taskId);
+          taskInfoLogs.setStatus(status);
+          taskInfoLogsMapper.updateById(taskInfoLogs);
+
+          BeanUtils.copyProperties(taskInfoLogs, task);
+          task.setExecuteTime(taskInfoLogs.getExecuteTime().getTime());
+      }catch (Exception exception){
+          log.error("task cancel has occurred exception : ", exception);
+      }
+      return task;
+    }
+
+    /**
      * 添加任务到redis
      * @param task 任务信息
      */
