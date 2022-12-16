@@ -1,7 +1,13 @@
 package com.heima.search.service.impl;
 
+import com.heima.model.common.dtos.ResponseResult;
+import com.heima.model.common.enums.AppHttpCodeEnum;
+import com.heima.model.search.dtos.HistorySearchDto;
+import com.heima.model.user.pojos.ApUser;
 import com.heima.search.pojos.ApUserSearch;
 import com.heima.search.service.ApUserSearchService;
+import com.heima.utils.thread.AppThreadLocalUtils;
+import com.mongodb.client.result.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -20,6 +26,47 @@ public class ApUserSearchServiceImpl implements ApUserSearchService {
 
     @Resource
     private MongoTemplate mongoTemplate;
+
+    /**
+     * 删除用户搜索历史
+     *
+     * @param dto
+     * @return
+     */
+    @Override
+    public ResponseResult delUserSearch(HistorySearchDto dto) {
+        // 检查参数
+        if (dto.getId() == null){
+            return ResponseResult.errorResult(AppHttpCodeEnum.PARAM_INVALID);
+        }
+        // 判断是否登录
+        ApUser user = AppThreadLocalUtils.getUser();
+        if (user == null){
+            return ResponseResult.errorResult(AppHttpCodeEnum.NEED_LOGIN);
+        }
+        // 删除
+        mongoTemplate.remove(Query.query(Criteria.where("userId").is(user.getId()).and("id").is(dto.getId())), ApUserSearch.class);
+
+        return ResponseResult.okResult(AppHttpCodeEnum.SUCCESS);
+    }
+
+    /**
+     * 查询用户搜索历史
+     *
+     * @return 搜索历史
+     */
+    @Override
+    public ResponseResult findUserSearch() {
+        // 获取当前用户
+        ApUser user = AppThreadLocalUtils.getUser();
+        if (user == null){
+            return ResponseResult.errorResult(AppHttpCodeEnum.NEED_LOGIN);
+        }
+        // 根据用户查询搜索历史 按时间倒序
+        List<ApUserSearch> apUserSearches = mongoTemplate.find(Query.query(Criteria.where("userId").is(user.getId())).with(Sort.by(Sort.Direction.DESC, "createTime")), ApUserSearch.class);
+        log.info("根据用户查询搜索历史 按时间倒序 apUserSearches : {}", apUserSearches);
+        return ResponseResult.okResult(apUserSearches);
+    }
 
     /**
      * 保存用户搜索记录
