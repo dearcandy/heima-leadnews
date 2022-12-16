@@ -6,6 +6,7 @@ import com.heima.model.article.pojos.ApArticle;
 import org.apache.ibatis.annotations.Param;
 import org.mapstruct.Mapper;
 
+import java.util.Date;
 import java.util.List;
 
 @Mapper
@@ -18,4 +19,12 @@ public interface ApArticleMapper extends BaseMapper<ApArticle> {
      * @return 文章列表
      */
     List<ApArticle> loadArticleList(@Param("dto") ArticleHomeDto dto, @Param("type") Short type);
+
+
+    /**
+     * 获取最近五天文章列表
+     * @param dayParam 日期参数
+     * @return 文章列表
+     */
+    List<ApArticle> findArticleListByLast5days(@Param("dayParam") Date dayParam);
 }

@@ -17,6 +17,24 @@ public class ArticleConstants {
      */
     public static final String DEFAULT_TAG = "__all__";
 
+    /**
+     * 文章创建ES索引topic
+     */
     public static final String ARTICLE_ES_SYNC_TOPIC = "article.es.sync.topic";
 
+
+    /**
+     * 热点文章点赞权重
+     */
+    public static final Integer HOT_ARTICLE_LIKE_WEIGHT = 3;
+    /**
+     * 热点文章评论权重
+     */
+    public static final Integer HOT_ARTICLE_COMMENT_WEIGHT = 5;
+    /**
+     * 热点文章收藏权重
+     */
+    public static final Integer HOT_ARTICLE_COLLECTION_WEIGHT = 8;
+
+    public static final String HOT_ARTICLE_FIRST_PAGE = "hot_article_first_page_";
 }

@@ -1,0 +1,9 @@
+server:
+  port: ${port}
+xxl:
+  job:
+    admin:
+      addresses: http://121.4.65.89:8888/xxl-job-admin
+    executor:
+      app-name: xxl-job-sharding-executor
+      port: ${executor.port}
