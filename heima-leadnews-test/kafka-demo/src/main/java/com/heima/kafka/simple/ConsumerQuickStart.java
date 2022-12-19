@@ -27,7 +27,7 @@ public class ConsumerQuickStart {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
 
         // 订阅主题
-        consumer.subscribe(Collections.singletonList("topic-first"));
+        consumer.subscribe(Collections.singletonList("itcast-topic-out"));
 
         while (true){
             // 拉取消息
